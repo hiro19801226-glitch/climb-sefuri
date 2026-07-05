@@ -4,13 +4,14 @@
  * データベースのセキュリティルールは要件どおり認証なし・全開放（read/write: true）を前提とする。
  */
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyAVUiqpU8_20nkwriiW-hPpB4ejeXuInL4",
+  authDomain: "climb-sefuri.firebaseapp.com",
+  databaseURL: "https://climb-sefuri-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "climb-sefuri",
+  storageBucket: "climb-sefuri.firebasestorage.app",
+  messagingSenderId: "791020378646",
+  appId: "1:791020378646:web:677f98df23980ba3c17337",
+  measurementId: "G-0X8PF4WKGS",
 };
 
 /** プレースホルダーのままかどうか（未設定時はローカルモックストアで動作させる） */
