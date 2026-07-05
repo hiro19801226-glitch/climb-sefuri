@@ -31,6 +31,7 @@ export function initRouter(root: ParentNode): void {
     })
   );
 
-  const initial = location.hash.replace("#", "");
-  show(isViewId(initial) ? initial : "home");
+  // ページを開いたときは常にホームから開始する
+  // （共有URLやLINE内蔵ブラウザに #ranks 等が残っていても無視してホームを表示）
+  show("home");
 }
