@@ -1,0 +1,8 @@
+[
+  { "id": "iron", "jp": "アイアン", "en": "IRON", "subMinutes": 65, "flavor": "すべての冒険はここから始まる", "gradient": "t-iron", "dark": "#39424e" },
+  { "id": "bronze", "jp": "ブロンズ", "en": "BRONZE", "subMinutes": 60, "flavor": "ひとつ上の景色が見えてくる", "gradient": "t-bronze", "dark": "#6e441c" },
+  { "id": "silver", "jp": "シルバー", "en": "SILVER", "subMinutes": 55, "flavor": "確かな力が君を次のステージへ", "gradient": "t-silver", "dark": "#4a5666" },
+  { "id": "gold", "jp": "ゴールド", "en": "GOLD", "subMinutes": 50, "flavor": "その走りは仲間の目標になる", "gradient": "t-gold", "dark": "#7a5410" },
+  { "id": "platinum", "jp": "プラチナ", "en": "PLATINUM", "subMinutes": 45, "flavor": "限界を超えた者だけの領域", "gradient": "t-platinum", "dark": "#0f3a70" },
+  { "id": "titan", "jp": "チタン", "en": "TITAN", "subMinutes": 40, "flavor": "伝説の領域へようこそ", "gradient": "t-titan", "dark": "#2e1566" }
+]
