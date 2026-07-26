@@ -1,11 +1,11 @@
-import type { Member, TierId } from "../types";
+import type { Member } from "../types";
 import { getMembersStore } from "../firebase/membersStore";
 import { isFirebaseConfigured } from "../firebase/config";
 import { mmssToSeconds, secondsToClock } from "../firebase/time";
 import { judgeTier, tierLabel } from "../data/tiers";
 import { emblemMarkup } from "../components/defs";
 import { meterMarkup } from "../components/meter";
-import { downloadStickerSvg } from "../components/sticker";
+import { stickerDownload, DOWNLOAD_ICON } from "../components/sticker";
 import { TIME_PATTERN } from "../components/memberForm";
 
 const TIER_ABBR: Record<string, string> = {
@@ -16,8 +16,6 @@ const TIER_ABBR: Record<string, string> = {
   platinum: "p",
   titan: "t",
 };
-
-const DOWNLOAD_ICON = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>`;
 
 export function membersViewMarkup(): string {
   return `
@@ -55,9 +53,15 @@ function memberCardMarkup(member: Member, position: number | null): string {
   const posChip =
     position != null ? `<span class="pos${position === 1 ? " lead" : ""}">#${position}</span>` : "";
 
-  const sticker = hasTier
-    ? `<button type="button" class="btn-small sticker-dl" data-sticker="${judgement}">${DOWNLOAD_ICON}<span>${tierLabel(judgement)}ステッカーを保存</span></button>`
-    : `<p class="sticker-note">ステッカーは称号獲得（65分切り）で取得できます。</p>`;
+  // 称号獲得者は各ティア、完走のみ（65分超）は Finisher ステッカーをDL可。未出走は取得不可。
+  let sticker: string;
+  if (judgement === "none") {
+    sticker = `<p class="sticker-note">リザルトを登録するとステッカーを取得できます。</p>`;
+  } else {
+    const { img, file } = stickerDownload(judgement);
+    const label = judgement === "finisher" ? "Finisher" : tierLabel(judgement);
+    sticker = `<a class="btn-small sticker-dl" href="${img}" download="${file}">${DOWNLOAD_ICON}<span>${label}ステッカーを保存</span></a>`;
+  }
 
   return `
     <div class="member m-${tierClass}" data-id="${member.id}">
@@ -137,13 +141,6 @@ export function mountMembersView(root: ParentNode): void {
 
     listEl.addEventListener("click", async (e) => {
       const el = e.target as HTMLElement;
-
-      const stickerTier = el.closest<HTMLElement>("[data-sticker]")?.dataset.sticker;
-      if (stickerTier) {
-        downloadStickerSvg(stickerTier as TierId);
-        return;
-      }
-
       const deleteId = el.closest<HTMLElement>("[data-delete]")?.dataset.delete;
       if (!deleteId) return;
       const member = latestMembers.find((m) => m.id === deleteId);

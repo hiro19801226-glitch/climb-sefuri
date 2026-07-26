@@ -61,7 +61,7 @@
 .rank .flavor{font-size:13px;color:var(--muted);margin-top:4px;}
 .r-iron{--c:var(--iron);} .r-bronze{--c:var(--bronze);} .r-silver{--c:var(--silver);}
 .r-gold{--c:var(--gold);} .r-platinum{--c:var(--platinum);} .r-titan{--c:var(--titan);}
-@media (prefers-reduced-motion: reduce){.rank:hover .icon{animation:none;}}
+@media (prefers-reduced-motion: reduce){.rank:hover .icon,.member:hover .m-icon{animation:none;}}
 
 /* ===== STICKERS ===== */
 .stickers{
@@ -70,10 +70,13 @@
   background:radial-gradient(130% 100% at 50% 0%, rgba(255,92,58,.06), transparent 58%), rgba(15,19,27,.5);
 }
 .sticker{display:flex;flex-direction:column;align-items:center;gap:12px;}
-.sticker svg{width:100%;max-width:180px;height:auto;transition:transform .35s var(--ease);filter:drop-shadow(0 10px 22px rgba(0,0,0,.45));}
-.sticker:hover svg{transform:rotate(-5deg) scale(1.06) translateY(-2px);}
+.sticker .sticker-photo{width:100%;max-width:190px;height:auto;border-radius:16px;transition:transform .35s var(--ease);box-shadow:0 12px 26px rgba(0,0,0,.5);}
+.sticker:hover .sticker-photo{transform:rotate(-4deg) scale(1.05) translateY(-2px);}
+.sticker .sticker-dl{display:inline-flex;align-items:center;gap:7px;}
+.sticker .sticker-dl:hover{border-color:var(--accent);color:var(--accent);}
+.sticker .sticker-dl svg{flex:none;}
 .sticker .cap{font-size:12px;color:var(--muted);letter-spacing:.1em;font-weight:700;}
-@media (prefers-reduced-motion: reduce){.sticker:hover svg{transform:none;}}
+@media (prefers-reduced-motion: reduce){.sticker:hover .sticker-photo{transform:none;}}
 
 /* ===== MEMBERS (Firebase realtime board) ===== */
 .member-form{
@@ -95,11 +98,13 @@
 .member-status.err{color:var(--danger);}
 
 .members{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;}
-.member{--c:var(--silver);background:radial-gradient(135% 85% at 50% -20%, color-mix(in srgb,var(--c) 16%, transparent), transparent 55%), var(--panel);border:1px solid var(--line);border-radius:20px;padding:30px 28px;backdrop-filter:blur(6px);position:relative;transition:transform .28s var(--ease),border-color .28s var(--ease),box-shadow .28s var(--ease);}
+.member{--c:var(--silver);background:radial-gradient(135% 85% at 50% -20%, color-mix(in srgb,var(--c) 16%, transparent), transparent 55%), var(--panel);border:1px solid var(--line);border-radius:20px;padding:30px 28px;position:relative;transition:transform .28s var(--ease),border-color .28s var(--ease),box-shadow .28s var(--ease);}
 .member:hover{transform:translateY(-5px);border-color:color-mix(in srgb,var(--c) 65%,var(--line));box-shadow:var(--shadow-lg), 0 0 46px -12px color-mix(in srgb,var(--c) 55%, transparent);}
 /* ヘアラインもティア色に寄せる */
 .member::before{background:linear-gradient(150deg, color-mix(in srgb,var(--c) 50%, rgba(255,255,255,.28)), rgba(255,255,255,.03) 32%, transparent 62%);}
-.member .m-icon{width:68px;height:74px;margin-bottom:14px;filter:drop-shadow(0 5px 12px rgba(0,0,0,.45));animation:emblemGlow 3.8s var(--ease) infinite;}
+.member .m-icon{width:68px;height:74px;margin-bottom:14px;filter:drop-shadow(0 5px 12px rgba(0,0,0,.45));}
+/* 常時 drop-shadow アニメはメンバー数ぶん重なるため、hover 時だけ脈打たせる（待機時は静止影で見た目維持） */
+.member:hover .m-icon{animation:emblemGlow 3.8s var(--ease) infinite;}
 /* 順位バッジ（リザルト順のリーダーボード感） */
 .member .tag-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
 .member .pos{font-family:"Oswald",sans-serif;font-weight:700;font-size:13px;letter-spacing:.04em;color:var(--muted);background:rgba(8,11,16,.7);border:1px solid var(--line);border-radius:99px;padding:2px 10px;}
