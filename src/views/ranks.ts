@@ -26,7 +26,7 @@ export function ranksViewMarkup(): string {
     </div>
 
     <h3 class="sub-h">達成ステッカー</h3>
-    <p class="desc tight">目標達成の証明として配布するダイカットステッカー（φ50mm想定）。各ステッカーは下の「ダウンロード」から保存できます。タイム未達でも、完走すれば <b>Finisher</b> ステッカーを獲得。</p>
+    <p class="desc tight">目標達成の証明として配布するダイカットステッカー（φ50mm想定）。フレームやヘルメットに貼って称号を示そう。タイム未達でも、完走すれば <b>Finisher</b> ステッカーを獲得。ダウンロードはメンバーページの各自のカードから。</p>
 
     <div class="stickers" id="stickerGrid">${stickersGridMarkup()}</div>
   </section>`;

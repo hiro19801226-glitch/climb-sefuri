@@ -24,11 +24,9 @@ function stickerEntry(id: StickerId): StickerEntry {
 }
 
 function stickerFigure(entry: StickerEntry): string {
-  const { img, file } = stickerDownload(entry.id);
   return `
     <figure class="sticker">
-      <img class="sticker-photo" src="${img}" alt="${entry.jp} 達成ステッカー（${entry.caption}）" loading="lazy">
-      <a class="btn-small sticker-dl" href="${img}" download="${file}">${DOWNLOAD_ICON}<span>ダウンロード</span></a>
+      <img class="sticker-photo" src="${stickerImage[entry.id]}" alt="${entry.jp} 達成ステッカー（${entry.caption}）" loading="lazy">
       <figcaption class="cap">${entry.jp}／${entry.caption}</figcaption>
     </figure>`;
 }
