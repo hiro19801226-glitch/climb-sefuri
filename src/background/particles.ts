@@ -8,7 +8,7 @@ interface Particle {
   warm: boolean;
 }
 
-const PARTICLE_COUNT = 46;
+const PARTICLE_COUNT = 24;
 
 export function initParticles(canvas: HTMLCanvasElement): void {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -36,7 +36,10 @@ export function initParticles(canvas: HTMLCanvasElement): void {
     height = canvas.height = innerHeight;
   };
 
+  let running = false;
+
   const loop = () => {
+    if (!running) return;
     ctx.clearRect(0, 0, width, height);
     particles.forEach((p) => {
       p.y -= p.vy;
@@ -50,8 +53,22 @@ export function initParticles(canvas: HTMLCanvasElement): void {
     requestAnimationFrame(loop);
   };
 
+  const start = () => {
+    if (running) return;
+    running = true;
+    loop();
+  };
+  const stop = () => {
+    running = false;
+  };
+
   resize();
   particles = Array.from({ length: PARTICLE_COUNT }, () => spawn(true));
   addEventListener("resize", resize);
-  loop();
+  // 非表示タブでは描画を止めて無駄な負荷を回避
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stop();
+    else start();
+  });
+  start();
 }
