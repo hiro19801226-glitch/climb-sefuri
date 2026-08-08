@@ -1,6 +1,6 @@
-export type ViewId = "home" | "ranks" | "members" | "join";
+export type ViewId = "home" | "ranks" | "members" | "calendar" | "join";
 
-const VIEW_IDS: ViewId[] = ["home", "ranks", "members", "join"];
+const VIEW_IDS: ViewId[] = ["home", "ranks", "members", "calendar", "join"];
 
 export function isViewId(value: string): value is ViewId {
   return (VIEW_IDS as string[]).includes(value);

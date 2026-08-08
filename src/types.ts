@@ -25,3 +25,16 @@ export interface MemberRecord {
 export interface Member extends MemberRecord {
   id: string;
 }
+
+/** カレンダーの予定（Firebase Realtime Database に保存） */
+export interface EventRecord {
+  /** YYYY-MM-DD（ローカル日付） */
+  date: string;
+  title: string;
+  note: string | null;
+  updatedAt: number;
+}
+
+export interface CalEvent extends EventRecord {
+  id: string;
+}

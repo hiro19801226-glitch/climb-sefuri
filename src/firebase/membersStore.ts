@@ -1,6 +1,7 @@
 import type { Member, MemberRecord } from "../types";
 import { mmssToSeconds } from "./time";
-import { firebaseConfig, isFirebaseConfigured } from "./config";
+import { isFirebaseConfigured } from "./config";
+import { getRtdb } from "./db";
 import seedMembers from "../data/members.json";
 
 export type MembersListener = (members: Member[]) => void;
@@ -69,11 +70,7 @@ function createLocalMockStore(): MembersStore {
  * 認証は行わない（URL を知っていれば誰でも読み書き可能という要件どおり）。
  */
 async function createFirebaseStore(): Promise<MembersStore> {
-  const { initializeApp } = await import("firebase/app");
-  const { getDatabase, ref, onValue, push, update, remove } = await import("firebase/database");
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+  const { db, ref, onValue, push, update, remove } = await getRtdb();
   const membersRef = ref(db, "members");
 
   return {

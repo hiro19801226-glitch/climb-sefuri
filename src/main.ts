@@ -8,6 +8,7 @@ import { initRouter } from "./router";
 import { homeViewMarkup } from "./views/home";
 import { ranksViewMarkup } from "./views/ranks";
 import { membersViewMarkup, mountMembersView } from "./views/members";
+import { calendarViewMarkup, mountCalendarView } from "./views/calendar";
 import { joinViewMarkup, mountJoinView } from "./views/join";
 
 function shellMarkup(): string {
@@ -25,6 +26,7 @@ function shellMarkup(): string {
           <button class="tab" role="tab" data-view="home" aria-selected="true">ホーム</button>
           <button class="tab" role="tab" data-view="ranks" aria-selected="false">称号</button>
           <button class="tab" role="tab" data-view="members" aria-selected="false">メンバー</button>
+          <button class="tab" role="tab" data-view="calendar" aria-selected="false">カレンダー</button>
           <button class="tab" role="tab" data-view="join" aria-selected="false">参加する</button>
         </div>
       </div>
@@ -34,6 +36,7 @@ function shellMarkup(): string {
       ${homeViewMarkup()}
       ${ranksViewMarkup()}
       ${membersViewMarkup()}
+      ${calendarViewMarkup()}
       ${joinViewMarkup()}
     </main>
 
@@ -53,6 +56,7 @@ function mount(): void {
 
   initRouter(app);
   mountMembersView(app.querySelector("#view-members")!);
+  mountCalendarView(app.querySelector("#view-calendar")!);
   mountJoinView(app.querySelector("#view-join")!);
 }
 
