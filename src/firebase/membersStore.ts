@@ -1,4 +1,4 @@
-import type { Member, MemberRecord } from "../types";
+import type { Member, MemberRecord, RecordItem } from "../types";
 import { mmssToSeconds } from "./time";
 import { isFirebaseConfigured } from "./config";
 import { getRtdb } from "./db";
@@ -6,15 +6,40 @@ import seedMembers from "../data/members.json";
 
 export type MembersListener = (members: Member[]) => void;
 
+/** Firebase 上の生メンバー（records はネストされたオブジェクト） */
+type StoredMember = MemberRecord & {
+  records?: Record<string, { date: string; time: string; note?: string | null; at: number }>;
+};
+
+/** 記録オブジェクト → 新しい日付順の配列 */
+function toRecordList(raw: StoredMember["records"]): RecordItem[] {
+  if (!raw) return [];
+  return Object.entries(raw)
+    .map(([id, r]) => ({ id, date: r.date, time: r.time, note: r.note ?? null, at: r.at }))
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.at - a.at));
+}
+
 /**
- * リザルトボードの並び替えルール（gemini-code-1783220486502.md §3-②）:
- *   1. result が入力済みのメンバーを優先し、速い順（総秒数の昇順）
- *   2. 未出走（result 未入力）は下にまとめる
+ * メンバーのベストタイム（総秒数）。
+ * 記録があれば記録内の最速、無ければ従来の result（旧システムのベスト）を使う。
+ */
+export function memberBestSeconds(m: Member): number | null {
+  if (m.records.length) {
+    const secs = m.records
+      .map((r) => mmssToSeconds(r.time))
+      .filter((s): s is number => s != null);
+    if (secs.length) return Math.min(...secs);
+  }
+  return mmssToSeconds(m.result);
+}
+
+/**
+ * リーダーボードの並び替え：ベストタイムの速い順。未記録は下にまとめる。
  */
 export function sortMembers(members: Member[]): Member[] {
   return [...members].sort((a, b) => {
-    const secA = mmssToSeconds(a.result);
-    const secB = mmssToSeconds(b.result);
+    const secA = memberBestSeconds(a);
+    const secB = memberBestSeconds(b);
     if (secA != null && secB != null) return secA - secB;
     if (secA != null) return -1;
     if (secB != null) return 1;
@@ -22,11 +47,21 @@ export function sortMembers(members: Member[]): Member[] {
   });
 }
 
+export interface RecordInput {
+  date: string;
+  time: string;
+  note: string | null;
+}
+
 export interface MembersStore {
   subscribe(listener: MembersListener): () => void;
   add(data: Omit<MemberRecord, "updatedAt">): Promise<void>;
   update(id: string, data: Partial<Omit<MemberRecord, "updatedAt">>): Promise<void>;
   remove(id: string): Promise<void>;
+  /** メンバーにタイム記録を追加 */
+  addRecord(memberId: string, data: RecordInput): Promise<void>;
+  /** タイム記録を削除 */
+  removeRecord(memberId: string, recordId: string): Promise<void>;
 }
 
 /**
@@ -35,9 +70,13 @@ export interface MembersStore {
  * Firebase プロジェクトが無くても UI 全体を確認できるようにする。
  */
 function createLocalMockStore(): MembersStore {
-  let members: Member[] = (seedMembers as Member[]).map((m) => ({ ...m }));
+  let members: Member[] = (seedMembers as Array<Omit<Member, "records">>).map((m) => ({
+    ...m,
+    records: [],
+  }));
   const listeners = new Set<MembersListener>();
   let nextId = 1;
+  let nextRecId = 1;
 
   const emit = () => {
     const snapshot = sortMembers(members);
@@ -51,7 +90,7 @@ function createLocalMockStore(): MembersStore {
       return () => listeners.delete(listener);
     },
     async add(data) {
-      members = [...members, { ...data, id: `local-${nextId++}`, updatedAt: Date.now() }];
+      members = [...members, { ...data, id: `local-${nextId++}`, updatedAt: Date.now(), records: [] }];
       emit();
     },
     async update(id, data) {
@@ -62,7 +101,27 @@ function createLocalMockStore(): MembersStore {
       members = members.filter((m) => m.id !== id);
       emit();
     },
+    async addRecord(memberId, data) {
+      const rec: RecordItem = { ...data, id: `rec-${nextRecId++}`, at: Date.now() };
+      members = members.map((m) =>
+        m.id === memberId ? { ...m, records: toRecordList(recordsToRaw([...m.records, rec])) } : m
+      );
+      emit();
+    },
+    async removeRecord(memberId, recordId) {
+      members = members.map((m) =>
+        m.id === memberId ? { ...m, records: m.records.filter((r) => r.id !== recordId) } : m
+      );
+      emit();
+    },
   };
+}
+
+/** RecordItem[] → 生オブジェクト（モックで toRecordList を再利用して並べ直すため） */
+function recordsToRaw(list: RecordItem[]): StoredMember["records"] {
+  const raw: NonNullable<StoredMember["records"]> = {};
+  for (const r of list) raw[r.id] = { date: r.date, time: r.time, note: r.note, at: r.at };
+  return raw;
 }
 
 /**
@@ -76,8 +135,15 @@ async function createFirebaseStore(): Promise<MembersStore> {
   return {
     subscribe(listener) {
       const unsubscribe = onValue(membersRef, (snapshot) => {
-        const value = (snapshot.val() ?? {}) as Record<string, MemberRecord>;
-        const members: Member[] = Object.entries(value).map(([id, record]) => ({ id, ...record }));
+        const value = (snapshot.val() ?? {}) as Record<string, StoredMember>;
+        const members: Member[] = Object.entries(value).map(([id, rec]) => ({
+          id,
+          name: rec.name,
+          target: rec.target,
+          result: rec.result ?? null,
+          updatedAt: rec.updatedAt,
+          records: toRecordList(rec.records),
+        }));
         listener(sortMembers(members));
       });
       return unsubscribe;
@@ -90,6 +156,12 @@ async function createFirebaseStore(): Promise<MembersStore> {
     },
     async remove(id) {
       await remove(ref(db, `members/${id}`));
+    },
+    async addRecord(memberId, data) {
+      await push(ref(db, `members/${memberId}/records`), { ...data, at: Date.now() });
+    },
+    async removeRecord(memberId, recordId) {
+      await remove(ref(db, `members/${memberId}/records/${recordId}`));
     },
   };
 }

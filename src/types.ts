@@ -22,8 +22,21 @@ export interface MemberRecord {
   updatedAt: number;
 }
 
+/** 参加者の自己申告タイム記録（members/{id}/records に保存） */
+export interface RecordItem {
+  id: string;
+  /** YYYY-MM-DD（走った日） */
+  date: string;
+  /** mm.ss 形式のタイム */
+  time: string;
+  note: string | null;
+  at: number;
+}
+
 export interface Member extends MemberRecord {
   id: string;
+  /** タイム記録の履歴（新しい日付順） */
+  records: RecordItem[];
 }
 
 /** カレンダーの予定（Firebase Realtime Database に保存） */

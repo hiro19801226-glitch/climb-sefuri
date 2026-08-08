@@ -154,6 +154,26 @@
 .member .sticker-dl svg{flex:none;}
 .member .sticker-note{font-size:12px;color:var(--muted);}
 
+/* ベストタイム & 記録履歴 */
+.member .sub .best-time{color:var(--c);font-family:"Oswald",sans-serif;font-size:18px;font-weight:600;}
+.member .sub .attempts{color:var(--muted);}
+.member-history{margin:-4px 0 18px;}
+.member-history summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.05em;padding:4px 0;}
+.member-history summary::-webkit-details-marker{display:none;}
+.member-history summary::before{content:"▸";font-size:10px;color:var(--c);transition:transform .2s;}
+.member-history[open] summary::before{transform:rotate(90deg);}
+.member-history summary:hover{color:var(--text);}
+.member-history .hist-count{background:rgba(255,255,255,.08);border:1px solid var(--line);border-radius:99px;padding:1px 8px;font-family:"Oswald",sans-serif;font-size:12px;color:var(--text);}
+.rec-list{list-style:none;display:flex;flex-direction:column;gap:0;margin:8px 0 0;}
+.rec{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:12.5px;}
+.rec-date{color:var(--muted);min-width:66px;flex:none;}
+.rec-time{font-family:"Oswald",sans-serif;font-weight:600;font-size:15px;flex:none;}
+.rec.best .rec-time{color:var(--c);}
+.rec-badge{font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--c);border:1px solid color-mix(in srgb,var(--c) 60%,var(--line));border-radius:99px;padding:1px 6px;flex:none;}
+.rec-note{color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rec-del{margin-left:auto;font-size:11px;color:var(--muted);flex:none;}
+.rec-del:hover{color:var(--danger);}
+
 /* ===== JOIN ===== */
 .how{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:56px;}
 .step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:28px;backdrop-filter:blur(6px);transition:transform .28s var(--ease),border-color .28s var(--ease),box-shadow .28s var(--ease);}
