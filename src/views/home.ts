@@ -1,9 +1,20 @@
+import { getEventsStore } from "../firebase/eventsStore";
+import { todayISO, formatEventDate, escapeHtml } from "../lib/format";
+
 export function homeViewMarkup(): string {
   return `
   <section class="view" id="view-home" role="tabpanel">
     <p class="sec-label">Saga Hillclimb Challenge</p>
     <h1>登れ、仲間と共に。<br><span class="grad">超えろ、自分の限界を。</span></h1>
     <p class="lead">背振ロングで自分をアップデートしよう。目標タイムを設定し、仲間と切磋琢磨しながら、次のステージへ。</p>
+
+    <div class="home-upcoming" id="home-upcoming" hidden>
+      <div class="home-upcoming-head">
+        <span class="hu-label">近い予定</span>
+        <button type="button" class="hu-all" data-goto="calendar">カレンダーを見る →</button>
+      </div>
+      <div class="hu-list" id="hu-list"></div>
+    </div>
 
     <div class="hero-stats">
       <div class="hstat"><div class="v num">13.9<small>km</small></div><div class="k">全長</div></div>
@@ -31,4 +42,34 @@ export function homeViewMarkup(): string {
       <button class="btn btn-ghost" data-goto="ranks">称号システムを見る</button>
     </div>
   </section>`;
+}
+
+/** リード文の下に「近い予定」を表示（カレンダーと同じイベントストアをリアルタイム購読） */
+export function mountHomeUpcoming(root: ParentNode): void {
+  const container = root.querySelector<HTMLElement>("#home-upcoming");
+  const list = root.querySelector<HTMLElement>("#hu-list");
+  if (!container || !list) return;
+
+  getEventsStore().then((store) => {
+    store.subscribe((events) => {
+      const today = todayISO();
+      const upcoming = events.filter((e) => e.date >= today).slice(0, 3);
+      if (!upcoming.length) {
+        container.hidden = true;
+        list.innerHTML = "";
+        return;
+      }
+      container.hidden = false;
+      list.innerHTML = upcoming
+        .map(
+          (e) => `
+        <button type="button" class="hu-item" data-goto="calendar">
+          <span class="hu-date num">${formatEventDate(e.date)}</span>
+          <span class="hu-title">${escapeHtml(e.title)}</span>
+          ${e.attendees.length ? `<span class="hu-att">参加 ${e.attendees.length}</span>` : ""}
+        </button>`
+        )
+        .join("");
+    });
+  });
 }

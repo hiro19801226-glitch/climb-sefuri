@@ -5,7 +5,7 @@ import "./styles/components.css";
 import { injectSvgDefs } from "./components/defs";
 import { initParticles } from "./background/particles";
 import { initRouter } from "./router";
-import { homeViewMarkup } from "./views/home";
+import { homeViewMarkup, mountHomeUpcoming } from "./views/home";
 import { ranksViewMarkup } from "./views/ranks";
 import { membersViewMarkup, mountMembersView } from "./views/members";
 import { calendarViewMarkup, mountCalendarView } from "./views/calendar";
@@ -55,6 +55,7 @@ function mount(): void {
   if (canvas) initParticles(canvas);
 
   initRouter(app);
+  mountHomeUpcoming(app.querySelector("#view-home")!);
   mountMembersView(app.querySelector("#view-members")!);
   mountCalendarView(app.querySelector("#view-calendar")!);
   mountJoinView(app.querySelector("#view-join")!);

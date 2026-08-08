@@ -1,32 +1,7 @@
 import type { CalEvent } from "../types";
 import { getEventsStore } from "../firebase/eventsStore";
 import { isFirebaseConfigured } from "../firebase/config";
-
-const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
-
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
-function isoOf(year: number, month0: number, day: number): string {
-  return `${year}-${pad(month0 + 1)}-${pad(day)}`;
-}
-
-function todayISO(): string {
-  const d = new Date();
-  return isoOf(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
-/** "YYYY-MM-DD" → "M/D(曜)" */
-function formatDate(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  const wd = WEEKDAYS[new Date(y, m - 1, d).getDay()];
-  return `${m}/${d}(${wd})`;
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
-}
+import { WEEKDAYS, isoOf, todayISO, formatEventDate, escapeHtml } from "../lib/format";
 
 export function calendarViewMarkup(): string {
   return `
@@ -159,7 +134,7 @@ export function mountCalendarView(root: ParentNode): void {
       .join("");
     return `
       <div class="cal-event" data-id="${e.id}">
-        <div class="cal-event-date num">${formatDate(e.date)}</div>
+        <div class="cal-event-date num">${formatEventDate(e.date)}</div>
         <div class="cal-event-body">
           <div class="cal-event-title">${escapeHtml(e.title)}</div>
           ${e.note ? `<div class="cal-event-note">${escapeHtml(e.note)}</div>` : ""}
@@ -182,7 +157,7 @@ export function mountCalendarView(root: ParentNode): void {
   function renderList() {
     let events: CalEvent[];
     if (selectedDate) {
-      listTitleEl.textContent = `${formatDate(selectedDate)} の予定`;
+      listTitleEl.textContent = `${formatEventDate(selectedDate)} の予定`;
       clearSelBtn.hidden = false;
       events = latestEvents.filter((e) => e.date === selectedDate);
     } else {
@@ -231,7 +206,7 @@ export function mountCalendarView(root: ParentNode): void {
         statusEl.textContent = `「${title}」を更新しました。`;
       } else {
         await store.add(data);
-        statusEl.textContent = `${formatDate(date)} に「${title}」を追加しました。`;
+        statusEl.textContent = `${formatEventDate(date)} に「${title}」を追加しました。`;
       }
       resetForm();
     });

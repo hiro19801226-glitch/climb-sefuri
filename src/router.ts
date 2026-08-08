@@ -24,12 +24,13 @@ export function initRouter(root: ParentNode): void {
     })
   );
 
-  root.querySelectorAll<HTMLElement>("[data-goto]").forEach((b) =>
-    b.addEventListener("click", () => {
-      const id = b.dataset.goto;
-      if (id && isViewId(id)) show(id);
-    })
-  );
+  // [data-goto] はイベント委譲で処理（動的に追加される要素にも対応）
+  root.addEventListener("click", (e) => {
+    const el = (e.target as HTMLElement).closest<HTMLElement>("[data-goto]");
+    if (!el) return;
+    const id = el.dataset.goto;
+    if (id && isViewId(id)) show(id);
+  });
 
   // ページを開いたときは常にホームから開始する
   // （共有URLやLINE内蔵ブラウザに #ranks 等が残っていても無視してホームを表示）
