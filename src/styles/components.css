@@ -203,11 +203,25 @@
 .cal-event-date{font-family:"Oswald",sans-serif;font-size:16px;font-weight:600;color:var(--accent);white-space:nowrap;}
 .cal-event-title{font-weight:700;font-size:15px;}
 .cal-event-note{font-size:13px;color:var(--muted);margin-top:2px;}
-.cal-event-actions{display:flex;gap:8px;flex:none;}
+.cal-event-actions{display:flex;gap:8px;flex:none;align-self:start;}
 .cal-empty{color:var(--muted);font-size:14px;padding:8px 2px;}
+
+/* 参加表明（RSVP） */
+.cal-attend{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
+.cal-attend-count{font-size:12px;color:var(--muted);font-weight:700;}
+.cal-attend-count b{color:var(--accent);font-family:"Oswald",sans-serif;font-size:14px;}
+.cal-attend-list{display:flex;flex-wrap:wrap;gap:6px;}
+.attendee{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:99px;padding:3px 5px 3px 12px;font-size:12.5px;font-weight:700;}
+.attendee-x{width:17px;height:17px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;line-height:1;color:var(--muted);transition:color .15s,background .15s;}
+.attendee-x:hover{color:var(--danger);background:rgba(255,107,107,.14);}
+.attendee-x:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+.cal-attend-form{display:flex;gap:8px;align-items:center;}
+.cal-attend-input{flex:1;min-width:0;max-width:240px;background:#0c1018;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--text);}
+.cal-attend-input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
 
 @media (max-width:520px){
   .cal-day{min-height:48px;}
-  .cal-event{grid-template-columns:1fr;gap:8px;}
-  .cal-event-actions{justify-content:flex-end;}
+  .cal-event{grid-template-columns:auto 1fr;gap:8px 12px;}
+  .cal-event-actions{grid-column:1/-1;justify-content:flex-end;}
+  .cal-attend-input{max-width:none;}
 }

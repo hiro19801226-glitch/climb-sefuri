@@ -35,6 +35,14 @@ export interface EventRecord {
   updatedAt: number;
 }
 
+/** 予定への参加表明者 */
+export interface Attendee {
+  id: string;
+  name: string;
+  at: number;
+}
+
 export interface CalEvent extends EventRecord {
   id: string;
+  attendees: Attendee[];
 }

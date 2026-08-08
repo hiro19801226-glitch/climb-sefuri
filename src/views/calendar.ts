@@ -151,12 +151,26 @@ export function mountCalendarView(root: ParentNode): void {
   }
 
   function eventRow(e: CalEvent): string {
+    const chips = e.attendees
+      .map(
+        (a) =>
+          `<span class="attendee">${escapeHtml(a.name)}<button type="button" class="attendee-x" data-leave="${a.id}" aria-label="${escapeHtml(a.name)} の参加を取り消し">×</button></span>`
+      )
+      .join("");
     return `
       <div class="cal-event" data-id="${e.id}">
         <div class="cal-event-date num">${formatDate(e.date)}</div>
         <div class="cal-event-body">
           <div class="cal-event-title">${escapeHtml(e.title)}</div>
           ${e.note ? `<div class="cal-event-note">${escapeHtml(e.note)}</div>` : ""}
+          <div class="cal-attend">
+            <div class="cal-attend-count">参加 <b>${e.attendees.length}</b>人</div>
+            ${chips ? `<div class="cal-attend-list">${chips}</div>` : ""}
+            <form class="cal-attend-form" data-join="${e.id}">
+              <input type="text" class="cal-attend-input" placeholder="名前を入れて参加表明" aria-label="参加者名" maxlength="24">
+              <button type="submit" class="btn-small">参加</button>
+            </form>
+          </div>
         </div>
         <div class="cal-event-actions">
           <button type="button" class="btn-small" data-edit="${e.id}">編集</button>
@@ -255,8 +269,33 @@ export function mountCalendarView(root: ParentNode): void {
       renderList();
     });
 
+    // 参加表明（各予定行のインラインフォーム）
+    listEl.addEventListener("submit", async (e) => {
+      const joinForm = (e.target as HTMLElement).closest<HTMLFormElement>("form[data-join]");
+      if (!joinForm) return;
+      e.preventDefault();
+      const eventId = joinForm.dataset.join!;
+      const input = joinForm.querySelector<HTMLInputElement>(".cal-attend-input")!;
+      const name = input.value.trim();
+      if (!name) return;
+      input.value = "";
+      await store.join(eventId, name);
+    });
+
     listEl.addEventListener("click", async (e) => {
       const el = e.target as HTMLElement;
+
+      const leaveId = el.closest<HTMLElement>("[data-leave]")?.dataset.leave;
+      if (leaveId) {
+        const eventId = el.closest<HTMLElement>(".cal-event")?.dataset.id;
+        const ev = latestEvents.find((x) => x.id === eventId);
+        const att = ev?.attendees.find((a) => a.id === leaveId);
+        if (eventId && window.confirm(`${att?.name ?? "この参加者"} の参加を取り消しますか？`)) {
+          await store.leave(eventId, leaveId);
+        }
+        return;
+      }
+
       const editId = el.closest<HTMLElement>("[data-edit]")?.dataset.edit;
       const deleteId = el.closest<HTMLElement>("[data-delete]")?.dataset.delete;
 
