@@ -1,7 +1,7 @@
 import type { CalEvent } from "../types";
 import { getEventsStore } from "../firebase/eventsStore";
 import { isFirebaseConfigured } from "../firebase/config";
-import { WEEKDAYS, isoOf, todayISO, formatEventDate, escapeHtml } from "../lib/format";
+import { WEEKDAYS, isoOf, todayISO, formatEventDate, escapeHtml, lineShareUrl } from "../lib/format";
 
 export function calendarViewMarkup(): string {
   return `
@@ -148,6 +148,7 @@ export function mountCalendarView(root: ParentNode): void {
           </div>
         </div>
         <div class="cal-event-actions">
+          <a class="btn-small" href="${lineShareUrl(e.date, e.title, e.note)}" target="_blank" rel="noopener noreferrer">LINEで告知</a>
           <button type="button" class="btn-small" data-edit="${e.id}">編集</button>
           <button type="button" class="btn-small danger" data-delete="${e.id}">削除</button>
         </div>

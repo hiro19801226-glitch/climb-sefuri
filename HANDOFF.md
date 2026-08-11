@@ -55,6 +55,78 @@ git push origin main                           # Vercel が自動ビルド＆公
 - 設定は `src/firebase/config.ts`（apiKey 等はクライアント公開前提の値なのでコミット済み・秘密ではない）
 - `isFirebaseConfigured` が true のため、**開発サーバー（localhost）も本番と同じ Firebase に接続する** → テスト時は要注意（§10 参照）
 
+### 4-1. セキュリティ強化（App Check + ルールバリデーション）— コンソール側の作業が未完了
+
+「誰でも書き込める」仕様は維持したまま、`curl` 等でのDB直叩き・荒らしを防ぐための対策を追加中。
+**クライアント側コードは実装済み**（`src/firebase/config.ts` の `appCheckSiteKey` / `isAppCheckConfigured`、
+`src/firebase/db.ts` の `ensureAppCheck()`）だが、**Firebaseコンソール側の設定は未実施**。
+サイトキーがプレースホルダー（`YOUR_RECAPTCHA_V3_SITE_KEY`）のままの間は App Check 初期化はスキップされ、
+今までどおり動作する（壊れない）。
+
+有効化するには次の3手順が必要（ログインが要るためユーザー自身が実施）:
+
+1. Firebaseコンソール → プロジェクト `climb-sefuri` → **App Check** → Webアプリを登録 →
+   プロバイダは **reCAPTCHA v3** を選択 → 発行された **サイトキー** を
+   `src/firebase/config.ts` の `appCheckSiteKey` に貼り付けてビルド・デプロイ（§3の手順で push）。
+2. App Check → **Realtime Database** → **「Enforce（強制）」を有効化**。
+   → 有効なApp Checkトークンを持つ正規のWebアプリ以外からのリクエストは、`.read`/`.write`ルールに
+   到達する前にブロックされる（＝`curl`等の直叩きを遮断）。反映まで数分〜最大1日ほどかかることがある。
+3. Realtime Database → **ルール** タブに、以下のバリデーション強化ルールを貼り付けて公開。
+   `.read`/`.write` は既存どおり `true` のまま維持し、書き込みデータの**型・必須項目・文字数のみ検証**する
+   （**削除操作にはバリデーションが適用されないため「誰でも削除可」の仕様には影響しない**）。
+
+```json
+{
+  "rules": {
+    "members": {
+      ".read": true,
+      ".write": true,
+      "$memberId": {
+        ".validate": "newData.hasChildren(['name','target','updatedAt'])",
+        "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40" },
+        "target": { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{1,3}\\.[0-9]{1,2}$/)" },
+        "result": { ".validate": "newData.val() == null || (newData.isString() && newData.val().matches(/^[0-9]{1,3}\\.[0-9]{1,2}$/))" },
+        "updatedAt": { ".validate": "newData.isNumber()" },
+        "records": {
+          "$recordId": {
+            ".validate": "newData.hasChildren(['date','time','at'])",
+            "date": { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)" },
+            "time": { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{1,3}\\.[0-9]{1,2}$/)" },
+            "note": { ".validate": "newData.val() == null || (newData.isString() && newData.val().length <= 80)" },
+            "at": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        },
+        "$other": { ".validate": false }
+      }
+    },
+    "events": {
+      ".read": true,
+      ".write": true,
+      "$eventId": {
+        ".validate": "newData.hasChildren(['date','title','updatedAt'])",
+        "date": { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)" },
+        "title": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60" },
+        "note": { ".validate": "newData.val() == null || (newData.isString() && newData.val().length <= 200)" },
+        "updatedAt": { ".validate": "newData.isNumber()" },
+        "attendees": {
+          "$attendeeId": {
+            ".validate": "newData.hasChildren(['name','at'])",
+            "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24" },
+            "at": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}
+```
+
+有効化後の確認: `curl -s "$BASE/events.json" -X POST -d '{"title":"x"}'`（`date`/`updatedAt`欠落）が
+拒否されること、App Checkトークンなしのリクエスト（＝`curl`全般）が拒否されることを確認する。
+
 ### REST で直接DBを見る/掃除する
 ```bash
 BASE="https://climb-sefuri-default-rtdb.asia-southeast1.firebasedatabase.app"
@@ -112,7 +184,7 @@ src/
 | ホーム | ヒーロー、統計、標高プロファイル。リード文の下に**「近い予定」**（今日以降3件、Firebase連動、クリックでカレンダーへ）。CTAは「参加する」「称号システムを見る」 |
 | 称号 | 6ティアのランクカード（エンブレムに微光アニメ）＋**達成ステッカー実画像7枚（Finisher含む）を表示のみ**（DLボタンは無し） |
 | メンバー | **ベストタイム順リーダーボード**。記録登録フォーム（メンバー選択・走った日・タイム・メモ）、各カードにベスト/回数/**履歴（折りたたみ・最速にBESTバッジ）**、称号・メーター・**ステッカーDL**（完走者はFinisher） |
-| カレンダー | 月グリッド（予定ドット・日曜赤/土曜青・今日枠）＋近日リスト。予定の追加/編集/削除。各予定に**参加表明(RSVP)**（名前チップ＋×取消） |
+| カレンダー | 月グリッド（予定ドット・日曜赤/土曜青・今日枠）＋近日リスト。予定の追加/編集/削除。各予定に**参加表明(RSVP)**（名前チップ＋×取消）＋**「LINEで告知」ボタン**（後述） |
 | 参加する | STEPカード＋参加登録フォーム（名前＋目標タイム）→ メンバーに追加 |
 
 ---
@@ -164,9 +236,14 @@ events/{id}: {
 
 **重要な前提・決定**:
 - 元仕様書 §1「申込フォーム設置しない・LINEのみ」は**ユーザーが明示的に上書き**（登録/記録/カレンダーを実装）。**仕様書 `.md` 本体は未更新**。
-- **認証なしは意図的**（誰でも読み書き削除可）。荒らしリスクは許容済み。将来絞るなら Firebase ルールを調整。
+- **認証なしは意図的**（誰でも読み書き削除可）。荒らしリスクは許容済み。App Check + ルールバリデーションで軽減中（§4-1）。
 - 記録は**自己申告のみ、Strava連携なし**。
 - localStorage/sessionStorage 不使用。
+- **カレンダーの「LINEで告知」ボタン**（`src/lib/format.ts` の `lineShareUrl`）は、LINEの汎用共有インテント
+  （`https://line.me/R/msg/text/?text=...`）を開くだけで、**送信先のトークルームの招待リンクはコードに一切含めない**設計。
+  理由: このサイト／リポジトリは公開されているため、招待リンクをJSに埋め込むと不特定多数が非公開グループへ
+  参加できてしまう。送信先はボタンを押した本人（＝既存メンバー）がLINEの共有シートから選ぶ。
+  自動投稿Bot（LINE Messaging API + Cloud Functions）は未実装・提案のみ（ユーザーが今回は見送りと判断）。
 
 ---
 
@@ -201,7 +278,9 @@ events/{id}: {
 - 記録の CSV 書き出し
 - **スマホのナビ**：タブが2段に折り返す → 横スクロール1行化（要望済み・未対応）
 - OGP / favicon（ゴールドエンブレム流用）、独自ドメイン
-- Firebase ルールの厳格化（削除制限など）
+- Firebase ルールの厳格化: **バリデーション強化のJSON・クライアント側コードは実装済み（§4-1）。
+  App Check登録／Enforce有効化／ルール貼り付けのコンソール操作が未完了**。削除制限などのさらなる絞り込みは別途未着手。
+- LINE自動投稿Bot（Messaging API + Cloud Functions、要Blazeプラン）— 提案のみ、未実装
 
 ---
 
